@@ -1,0 +1,62 @@
+1) master file format
+   pet-id         pic x(3).
+   filler         pic x(3).                                   ksds-> with avg size ->80  (fixed format)
+   pet-type       pic x.->we will use it as a flag
+   filler         pic x(3).
+   breed          pic x(10).
+   filler         pic x(3).
+   dateofpurchase pic 9(6).
+   filler         pic x(3).
+   costprice      pic 9999v99.
+   quantity       pic x(3).
+
+2) sale transaction                                         ps file-> 80(fb)
+   pet-id          pic x(3).
+   filler          pic x(3).  
+   mrp             pic 9999v99.
+   filler          pic x(3).
+   quantity bought pic x(2).   (num of pets to be bought)
+
+
+3)pending file                                              ps file-> 80 (fb)
+   same format as sale transaction
+   unprocessed data of sale transaction file will be copied to pending file
+   if wrong pet-id is provided, that should also be moved to pending file. 
+
+4)processed transaction                                esds-> 80(fb)
+   pet-id          pic x(3).
+   filler          pic x(3).
+   dop             pic 999999.
+   filler          pic x(3).
+   quantity        pic x(2).
+   filler          pic x(3).
+   total price     pic 99999v99.
+   filler          pic x(3).
+   loss/profit     pic s9999v99.
+   filler          pic x(4).
+
+record format                    (the report data should be collected from the processed transaction file)  
+  01 ws-pagedet
+     05 filler     pic x(60).
+     05 page-num   pic x(10) value 'page-numb :'.
+     05 pageval    pic 99.   
+  01               pic x(80) value all '-'.
+  05 pettyphd      pic x(10) value 'pet-type:cat'
+  01 petdethd        pic x(80) value 'pet id        breed          datepur     price     quantity      profit'
+  01 pet-det
+     05 pet-id
+     05 breed
+     05 datepur
+     05 price
+     05 quantity
+     05 profit
+***********************************************************************************************************************************************************************
+ DATE: 16-9-19
+1) CREATED A KSDS FILE WITH RECORDSIZE(80,80)  ----------------------> OZA076.VSAM.KSDSCS
+2) SENT THE MASTER DATA TO KSDS FILE FROM A PS FILE USING REPRO
+3) CREADTED AN ALTERNATE INDEX TO THE ABOVE KSDS --------------------> OZA076.VSAM.KSDSCS.AIX
+4) CREATED A SALES TRANSACTION FILE WITH SOME PRE-WRITTEN DATA-------> OZA076.COBOL.PS1  (PS FILE WITH LRECL-80)
+5) CREATED A PENDING TRANSACTION FILE -------------------------------> OZA076.COBOL.PENDPS (PS FILE WITH LRECL-80)
+6) CREATED A TRANSACTION FILE OF ESDS TYPE WITH A RECORDSIZE(80,80)--> OZA076.VSAM.ESDSCS
+
+    
