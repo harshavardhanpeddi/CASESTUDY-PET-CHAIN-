@@ -1,0 +1,172 @@
+       ID           DIVISION.                                           00010036
+       PROGRAM-ID.  CASESTUD.                                           00020038
+       ENVIRONMENT  DIVISION.                                           00030036
+       INPUT-OUTPUT SECTION.                                            00040001
+       FILE-CONTROL.                                                    00050001
+           SELECT   MASTER   ASSIGN  TO   KSDSF                         00060036
+           ORGANIZATION    IS   INDEXED                                 00070036
+           ACCESS MODE     IS   DYNAMIC                                 00080036
+           RECORD KEY      IS   PET-ID OF INREC1                        00090036
+           FILE   STATUS   IS    WS-FS1.                                00100040
+      *                                                                 00110002
+           SELECT    SALES   ASSIGN TO DD1                              00120036
+           ORGANIZATION    IS    SEQUENTIAL                             00130036
+           ACCESS MODE     IS    SEQUENTIAL                             00140036
+           FILE   STATUS   IS    WS-FS2.                                00150036
+      *                                                                 00151002
+           SELECT   TRANSAC   ASSIGN TO  AS-DD2                         00160036
+           ORGANIZATION    IS     SEQUENTIAL                            00170036
+           ACCESS MODE     IS     SEQUENTIAL                            00180036
+           FILE   STATUS   IS    WS-FS3.                                00190036
+      *                                                                 00200003
+           SELECT   PENDFILE  ASSIGN TO  DD3                            00210036
+           ORGANIZATION    IS     SEQUENTIAL                            00220036
+           ACCESS MODE     IS     SEQUENTIAL                            00230036
+           FILE   STATUS   IS    WS-FS4.                                00240036
+      **************************************************************    00241036
+       DATA DIVISION.                                                   00250003
+      *                                                                 00251036
+       FILE SECTION.                                                    00260003
+      *                                                                 00261036
+       FD MASTER.                                                       00270005
+       01 INREC1.                                                       00280003
+          05 PET-ID           PIC X(3).                                 00290036
+          05 PET-TYP          PIC 9.                                    00300036
+             88 CAT-FLG                 VALUE  1.                       00301036
+             88 DOG-FLG                 VALUE  2.                       00302036
+             88 BIRD-FLG                VALUE  3.                       00303036
+             88 FISH-FLG                VALUE  4.                       00304036
+          05 BREED            PIC X(10).                                00310036
+          05 DOPO             PIC 9(6).                                 00320036
+          05 PRICE1           PIC 9999V99.                              00330036
+          05 QUANTITY         PIC 99.                                   00340036
+          05 FILLER           PIC X(52).                                00350036
+      *                                                                 00351041
+       FD SALES.                                                        00360005
+       01 INREC2.                                                       00370004
+          05 PET-ID           PIC X(3).                                 00380036
+          05 MRP              PIC 9(4)V9(2).                            00390036
+          05 NEWQUANT         PIC 9(2).                                 00400036
+          05 FILLER           PIC X(69).                                00410036
+      *                                                                 00411041
+       FD TRANSAC.                                                      00420005
+       01 OUTREC1.                                                      00430004
+          05 PET-ID           PIC X(3).                                 00440036
+          05 DOPN             PIC 9(6).                                 00450036
+          05 NEWQUANT         PIC 9(2).                                 00460036
+          05 TOTPRICE         PIC 9(5)V9(2).                            00470036
+          05 LOSSPROF         PIC S9(4)V9(2).                           00480036
+          05 FILLER           PIC X(56).                                00490036
+      *                                                                 00491042
+       FD PENDFILE.                                                     00500005
+       01 OUTREC2.                                                      00510004
+          05 PET-ID           PIC X(3).                                 00520036
+          05 MRP              PIC 9(4)V9(2).                            00530036
+          05 NEWQUANT         PIC 9(2).                                 00540036
+          05 REMARK           PIC X(15).                                00541036
+          05 FILLER           PIC X(54).                                00550036
+      *                                                                 00551036
+       WORKING-STORAGE SECTION.                                         00560004
+       COPY    CASEWSV.                                                 00580039
+      **************************************************************    00632036
+       PROCEDURE DIVISION.                                              00640004
+      **************************************************************    00641036
+      *-------------------------------------------------------------    00642036
+       MAIN-PARA.                                                       00650036
+      *-------------------------------------------------------------    00650136
+           CALL 'SORTCASE'                                              00651023
+           OPEN I-O     MASTER                                          00660036
+             IF WS-FS1 = 0                                              00670005
+                DISPLAY "OPEN MASTERFILE SUCCESS."                      00680005
+             ELSE                                                       00690005
+                DISPLAY "OPEN MASTERFILE FAILED WITH FS: " WS-FS1       00700005
+             END-IF                                                     00710005
+           OPEN OUTPUT PENDFILE                                         00711021
+             IF WS-FS4 = 0                                              00712021
+                DISPLAY "OPEN PEND FILE SUCCESS"                        00713021
+             ELSE                                                       00714021
+                DISPLAY "OPEN PEND FILE FAILED: "          WS-FS4       00715036
+             END-IF                                                     00716021
+           OPEN OUTPUT TRANSAC                                          00717021
+             IF WS-FS3 = 0                                              00718021
+                DISPLAY "OPEN TRANSAC FILE SUCCESS"                     00719021
+             ELSE                                                       00719121
+                DISPLAY "OPEN TRANSAC FILE FAILED: "       WS-FS3       00719236
+             END-IF                                                     00719321
+           OPEN INPUT  SALES                                            00720036
+             IF WS-FS2 = 0                                              00730005
+                DISPLAY " OPEN SALES FILE SUCCESS."                     00740005
+                PERFORM READ-SALES-PARA UNTIL WS-FS2 NOT = 0            00750005
+             ELSE                                                       00760005
+                DISPLAY "OPEN SALESFILE FAILED WITH FS: " WS-FS2        00770005
+             END-IF                                                     00780005
+           CLOSE SALES                                                  00781306
+           CLOSE MASTER                                                 00782006
+           CLOSE PENDFILE                                               00783020
+           CLOSE TRANSAC                                                00784020
+           CALL  'RPT'                                                  00785036
+           CALL  'PENDRPT'                                              00786037
+           STOP RUN.                                                    00790005
+      *---------------------------------------------------------------  00791036
+       READ-SALES-PARA.                                                 00800005
+      *---------------------------------------------------------------  00801036
+           READ SALES                                                   00810005
+             AT END                                                     00820005
+                DISPLAY "END OF SALES FILE REACHED"                     00830005
+             NOT AT END                                                 00840005
+                MOVE    PET-ID OF INREC2 TO PET-ID OF INREC1            00850036
+                READ MASTER                                             00860005
+                KEY  IS PET-ID OF INREC1                                00870036
+                INVALID     KEY                                         00880036
+                    DISPLAY 'INSIDE INVALID KEY'                        00881012
+                    MOVE    'INVALIDKEY' TO REMARK                      00882036
+                    PERFORM  PENDING-PARA1                              00890036
+                NOT INVALID KEY                                         00900005
+                 IF NEWQUANT      OF INREC2   IS NUMERIC                00901036
+                    IF ( NEWQUANT OF INREC2 ) <= QUANTITY               00910012
+                       IF   MRP   OF INREC2   IS NUMERIC                00911036
+                        PERFORM UPDATE-PARA                             00920011
+                       ELSE                                             00921024
+                        MOVE 'NONNUMERIC'   TO REMARK                   00922036
+                        PERFORM PENDING-PARA1                           00923024
+                       END-IF                                           00924024
+                    ELSE                                                00930005
+                        MOVE 'INSUFFICIENT' TO REMARK                   00931024
+                        PERFORM PENDING-PARA1                           00940024
+                    END-IF                                              00950005
+                 ELSE                                                   00951024
+                        MOVE 'SPACESGIVEN'  TO REMARK                   00951136
+                        PERFORM PENDING-PARA1                           00952024
+                 END-IF                                                 00953024
+                END-READ                                                00960005
+           END-READ.                                                    00970007
+      *---------------------------------------------------------------- 00971036
+       PENDING-PARA1.                                                   00980005
+      *---------------------------------------------------------------- 00981036
+           DISPLAY "IN PENDING PARA1"                                   00990020
+           MOVE CORR INREC2 TO OUTREC2                                  01030005
+           WRITE OUTREC2                                                01041010
+            IF WS-FS4 = 0                                               01042015
+                DISPLAY 'WRITE SUCCESSFUL'                              01043015
+            ELSE                                                        01044015
+                DISPLAY 'WRITE FAIL WITH FS: ' WS-FS4                   01045018
+            END-IF.                                                     01046018
+      *---------------------------------------------------------------- 01047036
+       UPDATE-PARA.                                                     01140005
+      *---------------------------------------------------------------- 01150036
+           DISPLAY 'IN UPDATE-PARA'                                     01181011
+           ACCEPT WS-TEMP      FROM DATE                                01190036
+           MOVE   WS-TEMP(1:1) TO DOPN(5:1)                             01191036
+           MOVE   WS-TEMP(2:1) TO DOPN(6:1)                             01192036
+           MOVE   WS-TEMP(3:2) TO DOPN(3:2)                             01192136
+           MOVE   WS-TEMP(5:1) TO DOPN(1:1)                             01193036
+           MOVE   WS-TEMP(6:1) TO DOPN(2:1)                             01194036
+           MOVE    CORR INREC2 TO OUTREC1                               01200036
+           MULTIPLY NEWQUANT   OF INREC2  BY MRP OF INREC2              01210036
+                    GIVING TOTPRICE                                     01220005
+           COMPUTE  LOSSPROF = TOTPRICE -                               01230036
+                     ( NEWQUANT OF INREC2 * PRICE1 )                    01240005
+           END-COMPUTE                                                  01250005
+           WRITE    OUTREC1                                             01251036
+           SUBTRACT NEWQUANT OF INREC2 FROM QUANTITY                    01260005
+           REWRITE  INREC1.                                             01270036

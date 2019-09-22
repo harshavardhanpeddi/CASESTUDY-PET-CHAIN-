@@ -1,0 +1,185 @@
+       ID           DIVISION.                                           00010004
+       PROGRAM-ID. RPT.                                                 00020001
+       ENVIRONMENT  DIVISION.                                           00030004
+       INPUT-OUTPUT SECTION.                                            00040000
+       FILE-CONTROL.                                                    00050000
+           SELECT TRANSAC1   ASSIGN  TO AS-DD2                          00060004
+           FILE   STATUS  IS WS-FS1.                                    00070004
+      *                                                                 00071004
+           SELECT MASTERF    ASSIGN  TO KSDSF                           00080004
+           ORGANIZATION   IS INDEXED                                    00090004
+           ACCESS MODE    IS DYNAMIC                                    00100004
+           RECORD KEY     IS PET-ID  OF MASTERF                         00110004
+           FILE   STATUS  IS WS-FS2.                                    00120004
+      *                                                                 00121004
+           SELECT FINAL-RPT  ASSIGN  TO DD8                             00130004
+           FILE   STATUS  IS WS-FS3.                                    00140004
+      *                                                                 00141004
+       DATA         DIVISION.                                           00150004
+      *                                                                 00151005
+       FILE         SECTION.                                            00160004
+      *                                                                 00161005
+       FD TRANSAC1.                                                     00170002
+       01 INREC.                                                        00180002
+          05 PET-ID        PIC X(3).                                    00190000
+          05 DOP           PIC 9(6).                                    00200000
+          05 QUANT-PUR     PIC 99.                                      00210002
+          05 TOTPRICE      PIC 9(5)V9(2).                               00220002
+          05 LOSSPROF      PIC S9(4)V9(2).                              00230002
+          05               PIC X(56).                                   00240000
+       FD MASTERF.                                                      00250002
+       01 MASTER.                                                       00260000
+          05 PET-ID        PIC X(3).                                    00270000
+          05 PET-TYPE      PIC 9.                                       00280000
+             88 CAT                        VALUE 1.                     00290004
+             88 DOG                        VALUE 2.                     00300004
+             88 BIRD                       VALUE 3.                     00310004
+             88 FISH                       VALUE 4.                     00320004
+          05 BREED         PIC X(10).                                   00330000
+          05 DOPO          PIC 9(6).                                    00340004
+          05 COST-PRICE    PIC 9(4)V9(2).                               00350002
+          05 QUANTITY      PIC 9(2).                                    00360002
+          05               PIC X(52).                                   00370000
+       FD FINAL-RPT.                                                    00380002
+       01 OUTREC           PIC X(80).                                   00390000
+      *                                                                 00391004
+       WORKING-STORAGE SECTION.                                         00400000
+       01 HEAD PIC X(80) VALUE '   PETID     BREED      DATEPUR      PRI00410000
+      -     'CE      QUANTITY     PROFIT/LOSS'.                         00420005
+       01 WS-STAR          PIC X(80)       VALUE ALL '*'.               00430007
+       01 RPT-NM PIC X(80) VALUE '                    PROCESSED REPORT'.00431002
+       01 WS-DATE.                                                      00440000
+          05               PIC X(49).                                   00450004
+          05 DT-HEAD       PIC X(5)        VALUE 'DATE:'.               00460004
+          05 DD            PIC XX.                                      00461004
+          05 SYM1          PIC X           VALUE '/'.                   00462004
+          05 MM            PIC XX.                                      00463004
+          05 SYM2          PIC X           VALUE '/'.                   00464004
+          05 YY            PIC XX.                                      00465004
+       01 WS-DET.                                                       00480000
+          05               PIC X(5).                                    00481004
+          05 PET-ID        PIC X(3).                                    00490004
+          05               PIC X(4)        VALUE SPACES.                00500007
+          05 BREED         PIC X(10).                                   00510004
+          05               PIC X(4)        VALUE SPACES.                00520007
+          05 DOP           PIC 99/99/99.                                00530004
+          05               PIC X(4)        VALUE SPACES.                00540007
+          05 TOTAL-PRICE   PIC 99999.99.                                00550004
+          05               PIC X(6)        VALUE SPACES.                00560007
+          05 QUANT-PUR     PIC 9(2).                                    00570004
+          05               PIC X(8)        VALUE SPACES.                00580007
+          05 LOSSPROF      PIC -9999.99.                                00590004
+          05               PIC X(4)        VALUE SPACES.                00600007
+       77 WS-FS1           PIC 9(2).                                    00610004
+       77 WS-FS2           PIC 9(2).                                    00620004
+       77 WS-FS3           PIC 9(2).                                    00630004
+       77 WS-CHECK         PIC 9(2)        VALUE 0.                     00640007
+       01 PET-DET.                                                      00650002
+          05               PIC X(3).                                    00651005
+          05 TYP           PIC X(10)       VALUE 'PET TYPE: '.          00660007
+          05 PT            PIC X(4).                                    00670004
+          05               PIC X(32).                                   00671006
+          05 PAGNUM        PIC X(9)        VALUE 'PAGE NO: '.           00680007
+          05 PAGVAL        PIC 99          VALUE 1.                     00690007
+       01 TOTAL.                                                        00700002
+          05               PIC X(5).                                    00701004
+          05 TOT-DISP      PIC X(13)       VALUE  'TOTAL NO. OF'.       00710007
+          05 P-T           PIC X(4).                                    00720004
+          05 CHAR-DISP     PIC X(2)        VALUE 'S:'.                  00730007
+          05 TOT-TYPE      PIC 9(3)        VALUE 0.                     00740007
+       01 PLTOT.                                                        00750000
+          05               PIC X(5).                                    00751004
+          05 TOT-DISP      PIC X(18)       VALUE 'TOTAL PROFIT/LOSS:'.  00760007
+          05 PLT           PIC -99999.99.                               00770004
+       01 TOTAL-PL         PIC S9(5)V9(2).                              00780004
+       01 P-FLG            PIC 9.                                       00790004
+      **************************************************************    00791004
+       PROCEDURE DIVISION.                                              00800000
+      **************************************************************    00801004
+      *-------------------------------------------------------------    00802004
+       MAIN-PARA.                                                       00810000
+      *-------------------------------------------------------------    00811004
+           PERFORM   OPEN-PARA                                          00820004
+           WRITE  OUTREC  FROM WS-STAR                                  00821004
+           MOVE SPACES    TO   OUTREC                                   00822004
+           WRITE  OUTREC                                                00823004
+           WRITE  OUTREC  FROM RPT-NM                                   00824004
+           MOVE   SPACES  TO   OUTREC                                   00825004
+           WRITE  OUTREC                                                00826004
+           MOVE FUNCTION CURRENT-DATE(7:2) TO DD                        00830000
+           MOVE FUNCTION CURRENT-DATE(5:2) TO MM                        00831000
+           MOVE FUNCTION CURRENT-DATE(3:2) TO YY                        00832000
+           PERFORM READ-INPUT UNTIL WS-FS1 NOT = 0                      00840000
+           WRITE  OUTREC FROM WS-STAR                                   00841004
+           CLOSE  TRANSAC1                                              00850004
+           CLOSE  MASTERF                                               00851004
+           GOBACK.                                                      00860000
+      *--------------------------------------------------------------   00861004
+       OPEN-PARA.                                                       00870000
+      *--------------------------------------------------------------   00871004
+           OPEN INPUT  TRANSAC1                                         00880004
+           OPEN INPUT  MASTERF                                          00890004
+           OPEN OUTPUT FINAL-RPT                                        00900002
+           DISPLAY 'OPEN STATUS' WS-FS1 ' ' WS-FS2 ' ' WS-FS3.          00910000
+      *---------------------------------------------------------------  00910104
+       SUMMARY-PARA.                                                    00911002
+      *---------------------------------------------------------------  00911104
+           WRITE OUTREC FROM TOTAL                                      00912002
+           WRITE OUTREC FROM PLTOT                                      00913002
+           MOVE  SPACES TO   OUTREC                                     00914004
+           WRITE OUTREC.                                                00915002
+      *---------------------------------------------------------------  00916004
+       READ-INPUT.                                                      00920000
+      *---------------------------------------------------------------  00921004
+           READ  TRANSAC1                                               00930004
+             AT     END PERFORM SUMMARY-PARA                            00940004
+             NOT AT END                                                 00950000
+             MOVE PET-ID   OF INREC TO PET-ID OF MASTERF                00960004
+             READ MASTERF                                               00970002
+             KEY IS  PET-ID OF MASTERF                                  00980004
+             NOT INVALID KEY                                            00990000
+               IF    PET-TYPE OF MASTER NOT = P-FLG                     01000004
+                MOVE PET-TYPE OF MASTER TO P-FLG                        01010002
+                PERFORM CNTRL-BREAK                                     01020000
+               END-IF                                                   01030000
+               MOVE  BREED OF MASTER TO BREED OF WS-DET                 01040004
+             END-READ                                                   01050000
+              MOVE TOTPRICE    OF INREC   TO TOTAL-PRICE OF WS-DET      01060003
+              MOVE PET-ID      OF INREC   TO PET-ID      OF WS-DET      01070002
+              MOVE DOPO        OF MASTER  TO DOP         OF WS-DET      01080002
+              MOVE QUANT-PUR   OF INREC   TO QUANT-PUR   OF WS-DET      01090002
+              MOVE LOSSPROF    OF INREC   TO LOSSPROF    OF WS-DET      01100002
+              ADD  QUANT-PUR   OF INREC   TO TOT-TYPE    OF TOTAL       01110002
+              COMPUTE TOTAL-PL = TOTAL-PL + LOSSPROF OF INREC           01120002
+              MOVE    TOTAL-PL TO PLT OF PLTOT                          01130004
+              WRITE   OUTREC FROM WS-DET                                01140004
+              DISPLAY WS-FS3                                            01150000
+           END-READ                                                     01160000
+           MOVE PT   OF PET-DET TO P-T OF TOTAL.                        01170002
+      *---------------------------------------------------------------  01171004
+       CNTRL-BREAK.                                                     01180000
+      *---------------------------------------------------------------  01181004
+           IF WS-CHECK = 1                                              01190002
+             PERFORM SUMMARY-PARA                                       01200000
+           END-IF                                                       01210000
+           EVALUATE TRUE                                                01220000
+             WHEN P-FLG = '1'                                           01230002
+                  MOVE ' CAT' TO PT OF  PET-DET                         01240002
+             WHEN P-FLG = '2'                                           01250002
+                  MOVE ' DOG' TO PT OF  PET-DET                         01260002
+             WHEN P-FLG = '3'                                           01270002
+                  MOVE 'BIRD' TO PT OF  PET-DET                         01280002
+             WHEN P-FLG = '4'                                           01290002
+                  MOVE 'FISH' TO PT OF PET-DET                          01300002
+           END-EVALUATE                                                 01310000
+           WRITE OUTREC FROM  WS-STAR                                   01320004
+           MOVE  1      TO    WS-CHECK                                  01330004
+           WRITE OUTREC FROM  WS-DATE                                   01340004
+           WRITE OUTREC FROM  PET-DET                                   01350004
+           WRITE OUTREC FROM  HEAD                                      01360004
+           MOVE  0      TO    TOT-TYPE OF TOTAL                         01370004
+           MOVE  0      TO    TOTAL-PL                                  01380004
+           ADD   1      TO    PAGVAL                                    01390004
+           WRITE OUTREC FROM  WS-STAR                                   01400004
+           MOVE  SPACES TO    OUTREC                                    01410004
+           WRITE OUTREC.                                                01420000

@@ -1,0 +1,5 @@
+20237000017INSUFFICIENT                                                         
+203450000 0SPACESGIVEN                                                          
+40130000020INSUFFICIENT                                                         
+402     000NONNUMERIC                                                           
+40410000019INVALIDKEY                                                           

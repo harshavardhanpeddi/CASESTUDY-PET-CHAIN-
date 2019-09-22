@@ -1,0 +1,39 @@
+       ID            DIVISION.                                          00010003
+       PROGRAM-ID. SORTCASE.                                            00020001
+       ENVIRONMENT   DIVISION.                                          00021003
+       INPUT-OUTPUT  SECTION.                                           00022003
+       FILE-CONTROL.                                                    00023000
+           SELECT INFILE   ASSIGN TO DD1.                               00024003
+           SELECT OUTFILE  ASSIGN TO DD1.                               00025003
+           SELECT SORTFILE ASSIGN TO SORTWK01.                          00026000
+      ************************************************************      00027003
+       DATA          DIVISION.                                          00030003
+      *                                                                 00030103
+       FILE          SECTION.                                           00031003
+      *                                                                 00031103
+       FD INFILE.                                                       00032000
+       01 INREC             PIC X(80).                                  00033003
+      *                                                                 00033103
+       FD OUTFILE.                                                      00034000
+       01 OUTREC            PIC X(80).                                  00035003
+      *                                                                 00035103
+       SD SORTFILE.                                                     00036000
+       01 SORT-CUST.                                                    00037000
+          05 PET-ID         PIC X(3).                                   00038003
+          05 MRP            PIC 9(4)V9(2).                              00039003
+          05 NEWQUANT       PIC 9(2).                                   00039103
+          05 FILLER         PIC X(69).                                  00039203
+      ***********************************************************       00039303
+       PROCEDURE DIVISION.                                              00039400
+      ***********************************************************       00039503
+      *----------------------------------------------------------       00039603
+       SORT-PARA.                                                       00050003
+      *----------------------------------------------------------       00051003
+           DISPLAY  "SORTING A FILE BASED ON PET-ID"                    00052003
+           SORT      SORTFILE                                           00070003
+           ASCENDING KEY PET-ID                                         00080001
+           USING     INFILE GIVING OUTFILE                              00090003
+           IF SORT-RETURN NOT = 0                                       00100000
+              DISPLAY "ERROR SORTING WITH SORT-RETURN : " SORT-RETURN   00110000
+           END-IF                                                       00120000
+           EXIT PROGRAM.                                                00130002
